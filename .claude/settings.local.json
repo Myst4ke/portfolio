@@ -1,0 +1,30 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(mkdir -p \"/tmp/design-extract\")",
+      "Bash(tar -xzf \"C:/Users/Florian POSEZ/.claude/projects/C--Users-Florian-POSEZ-prog-portfolio/ca11f337-5b8c-420a-80e5-0c1db7e6349a/tool-results/webfetch-1777989600877-uj5sti.bin\" -C \"/tmp/design-extract\")",
+      "Read(//tmp/**)",
+      "Bash(cp \"C:/Users/Florian POSEZ/.claude/projects/C--Users-Florian-POSEZ-prog-portfolio/ca11f337-5b8c-420a-80e5-0c1db7e6349a/tool-results/webfetch-1777989600877-uj5sti.bin\" /tmp/design.tar.gz)",
+      "Read(//c/tmp/**)",
+      "Bash(mkdir -p design-extract)",
+      "Bash(tar -xzf design.tar.gz -C design-extract)",
+      "Bash(cp *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "PowerShell(python .graphify_ast_run.py)",
+      "PowerShell(if \\(Test-Path graphify-out\\\\.graphify_chunk_01.json\\) { \"EXISTS: $\\(\\(Get-Item graphify-out\\\\.graphify_chunk_01.json\\).Length\\) bytes\" } else { \"MISSING\" })",
+      "PowerShell(python .graphify_merge_semantic.py)",
+      "PowerShell(python .graphify_merge.py)",
+      "PowerShell(python .graphify_build.py)",
+      "PowerShell(python .graphify_label.py)",
+      "PowerShell(python .graphify_html.py)",
+      "PowerShell(python .graphify_bench.py)",
+      "PowerShell($env:PYTHONIOENCODING=\"utf-8\"; python .graphify_bench.py)",
+      "Bash(graphify claude *)",
+      "Bash(cp \"C:/Users/Florian POSEZ/Downloads/PlushCV \\(1\\).pdf\" \"C:/Users/Florian POSEZ/prog/portfolio/public/cv-florian-posez-fr.pdf\")",
+      "Bash(cp \"C:/Users/Florian POSEZ/Downloads/PlushCV \\(1\\).pdf\" \"C:/Users/Florian POSEZ/prog/portfolio/public/cv-florian-posez-en.pdf\")",
+      "Bash(git *)"
+    ]
+  }
+}
