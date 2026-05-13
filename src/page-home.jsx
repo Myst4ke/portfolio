@@ -3,6 +3,9 @@ import { useI18n, computeExperienceMonths } from "./i18n.jsx";
 import { Section, Dot, PrimaryButton } from "./components.jsx";
 import { CountUp, DataPrintLive, Reveal } from "./scroll-fx.jsx";
 
+// Flip to true once real testimonials are available in i18n (home.testimonials).
+const SHOW_TESTIMONIALS = false;
+
 function StatBand({ items }) {
   return (
     <div style={{
@@ -166,7 +169,7 @@ export default function HomePage({ setPage }) {
         </div>
       </Section>
 
-      <Section style={{marginTop:120}}>
+      {SHOW_TESTIMONIALS && <Section style={{marginTop:120}}>
         <div className="mono meta" style={{marginBottom:18}}>{t("home.testimonialsEyebrow")}</div>
         <div style={{height:1,background:"var(--hair)"}}/>
         <div style={{display:"grid",gridTemplateColumns:"repeat(12,1fr)",gap:24,paddingTop:48}}>
@@ -213,7 +216,7 @@ export default function HomePage({ setPage }) {
             ))}
           </div>
         </div>
-      </Section>
+      </Section>}
     </main>
   );
 }
