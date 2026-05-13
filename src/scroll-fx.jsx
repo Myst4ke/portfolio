@@ -211,7 +211,28 @@ export function BarChart({ items, height = 260, accentIndex = -1 }) {
 
 export function DataPrintLive() {
   const ref = useRef(null);
-  const p = useScrollProgress(ref, { start: 1.0, end: 0.4 });
+
+  // Intro reveal: one-shot at mount, ramps from 0 to 1 over 1.8s.
+  // Long enough for the three sequenced phases (bars, curve, dots) to be readable.
+  const p = useInViewProgress(ref, { threshold: 0.05, duration: 1800 });
+
+  // Continuous breathing kicks in once intro reveal is mostly done.
+  const breathe = Math.max(0, Math.min(1, (p - 0.85) / 0.15));
+  const breatheOn = breathe > 0.01;
+
+  // RAF time loop for the breathing oscillation, only when needed.
+  const [t, setT] = useState(0);
+  useEffect(() => {
+    if (!breatheOn) return;
+    let raf;
+    const t0 = performance.now();
+    const tick = (now) => {
+      setT((now - t0) / 1000);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [breatheOn]);
 
   const lines = [];
   for (let i=0;i<14;i++) lines.push(
@@ -235,31 +256,77 @@ export function DataPrintLive() {
 
   const PATH_LEN = 700;
 
+  // Sequenced reveal phases (chorégraphie A):
+  //   0.00 → 0.30 : bars cascade left → right
+  //   0.30 → 0.70 : curve draws
+  //   0.70 → 1.00 : dots pop one by one, last one with a halo
+  const clamp01 = v => Math.max(0, Math.min(1, v));
+  const curveP = clamp01((p - 0.30) / 0.40);
+
+  // Breathing modulations - amplified for visibility.
+  const curveBreathe = breathe * 0.55 * Math.sin(t * 1.8);
+  const strokeW = 2.4 + curveBreathe;
+
+  // Halo pulse on the last dot (continuous after reveal).
+  const haloPhase = 0.5 + 0.5 * Math.sin(t * 1.4);
+  const haloR = 12 + breathe * 10 * haloPhase;
+  const haloOpacity = breathe * 0.35 * (1 - haloPhase);
+
   return (
     <svg ref={ref} viewBox="0 0 460 460" style={{width:"100%",height:"100%",display:"block"}}>
       {lines}
-      <path d={path} fill="none" stroke="var(--accent)" strokeWidth="2.4"
-        strokeLinecap="round" strokeLinejoin="round"
-        strokeDasharray={PATH_LEN}
-        strokeDashoffset={PATH_LEN * (1 - p)}
-        style={{transition:"stroke-dashoffset 80ms linear"}}
-      />
-      {dots.map((d,i)=>{
-        const localP = Math.max(0, Math.min(1, (p - 0.3 - i*0.1) / 0.15));
-        return (
-          <g key={"d"+i} style={{opacity:localP,transform:`scale(${localP})`,transformOrigin:`${d[0]}px ${d[1]}px`,transition:"opacity 120ms linear"}}>
-            <circle cx={d[0]} cy={d[1]} r="9" fill="none" stroke="var(--accent)" strokeWidth="1.4"/>
-            <circle cx={d[0]} cy={d[1]} r="3.2" fill="var(--ink)"/>
-          </g>
-        );
-      })}
+
+      {/* Phase 1: bars cascade (0 → 0.30) */}
       {heights.map((h,i)=>{
-        const localP = Math.max(0, Math.min(1, (p - 0.2 - i*0.04) / 0.2));
+        const phase = i / (heights.length - 1); // 0..1
+        const start = phase * 0.20;             // last bar starts at 0.20
+        const dur = 0.10;                       // each bar grows over 0.10
+        const localP = clamp01((p - start) / dur);
+        const wave = breathe * 0.14 * Math.sin(t * 2.4 + i * 0.55);
+        const scaledH = Math.max(0, h * localP * (1 + wave));
         const barY = 380, barH = 50;
         return (
           <rect key={"b"+i}
-            x={50 + i*40} y={barY + (barH - h*localP)} width={26} height={h*localP}
+            x={50 + i*40} y={barY + (barH - scaledH)} width={26} height={scaledH}
             fill={i%2===0 ? "var(--ink)" : "var(--accent)"} />
+        );
+      })}
+
+      {/* Phase 2: curve draws (0.30 → 0.70), then breathing stroke width */}
+      <path d={path} fill="none" stroke="var(--accent)" strokeWidth={strokeW}
+        strokeLinecap="round" strokeLinejoin="round"
+        strokeDasharray={PATH_LEN}
+        strokeDashoffset={PATH_LEN * (1 - curveP)}
+        style={{transition:"stroke-dashoffset 80ms linear"}}
+      />
+
+      {/* Phase 3: dots pop (0.70 → 1.00), last dot wrapped in halo */}
+      {dots.map((d,i)=>{
+        const phase = i / (dots.length - 1);  // 0..1
+        const start = 0.70 + phase * 0.20;    // staggered between 0.70 and 0.90
+        const dur = 0.10;
+        const localP = clamp01((p - start) / dur);
+        const sinPhase = Math.sin(t * 2.6 + i * 1.1);
+        const ringR = 9 + breathe * 3.2 * sinPhase;
+        const ringOpacity = localP * (0.5 + 0.5 * breathe * (0.5 + 0.5 * sinPhase));
+        const isLast = i === dots.length - 1;
+        return (
+          <g key={"d"+i} style={{
+            opacity: localP,
+            transform:`scale(${localP})`,
+            transformOrigin:`${d[0]}px ${d[1]}px`,
+            transition:"opacity 120ms linear"
+          }}>
+            {isLast && (
+              <circle cx={d[0]} cy={d[1]} r={haloR} fill="none"
+                stroke="var(--accent)" strokeWidth="1"
+                style={{opacity: haloOpacity}} />
+            )}
+            <circle cx={d[0]} cy={d[1]} r={ringR} fill="none"
+              stroke="var(--accent)" strokeWidth="1.4"
+              style={{opacity: ringOpacity}} />
+            <circle cx={d[0]} cy={d[1]} r="3.2" fill="var(--ink)"/>
+          </g>
         );
       })}
     </svg>
