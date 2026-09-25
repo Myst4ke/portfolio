@@ -2,46 +2,112 @@ import React, { useEffect, useState } from "react";
 import { useI18n } from "./i18n.jsx";
 import { Section, PageHeader, Pill, Dot, Chip, PrimaryButton } from "./components.jsx";
 import { Reveal, CountUp, DonutChart, BarChart, HBar } from "./scroll-fx.jsx";
-import { ArchitectureDiagram, MigrationTimeline, LineageGraph } from "./diagrams.jsx";
+import { ArchitectureDiagram, MigrationTimeline, LineageGraph, BoundaryDiagram, ModulePipeline } from "./diagrams.jsx";
 
-export function CasePage() {
+// Case studies, in display order. Each id maps to an i18n object under `cases`.
+export const CASE_IDS = ["olaqin", "kereis"];
+
+const TIMELINES = {
+  olaqin: {
+    fr: [
+      { month:"Fév 25", title:"Bronze formalisé",         note:"Lakehouse · ingestion brute" },
+      { month:"Mar 25", title:"CDC Type 2 / Silver",      note:"Historisation pilotée par métadonnées" },
+      { month:"Sep 25", title:"Gold + BI",                note:"Exploitation & Marketing en Power BI" },
+      { month:"Nov 25", title:"MDM Device",               note:"2ᵉ référentiel MDM (terminaux Vitale)" },
+      { month:"Juil 26", title:"Souscriptions end-to-end", note:"1ʳᵉˢ souscriptions MDM en prod, push 4 SI" },
+      { month:"Sep 26", title:"Reprise des données historiques", note:"L'historique des SI intégré au MDM" },
+    ],
+    en: [
+      { month:"Feb 25", title:"Bronze formalised",        note:"Lakehouse · raw ingestion" },
+      { month:"Mar 25", title:"CDC Type 2 / Silver",      note:"Metadata-driven historisation" },
+      { month:"Sep 25", title:"Gold + BI",                note:"Exploitation & Marketing on Power BI" },
+      { month:"Nov 25", title:"MDM Device",               note:"2nd MDM referential (Vitale terminals)" },
+      { month:"Jul 26", title:"End-to-end subscriptions", note:"1st MDM subscriptions in prod, 4-system push" },
+      { month:"Sep 26", title:"Historical data recovery", note:"Legacy history folded into the MDM" },
+    ],
+  },
+  kereis: {
+    fr: [
+      { month:"Août 26", title:"Démarrage du build",     note:"Hexagone posé contre des bouchons" },
+      { month:"Sep 26",  title:"Recevabilité en place",  note:"16 règles + matrice de complétude" },
+      { month:"Sep 26",  title:"Interprétation branchée", note:"Appel Bedrock réel, sortie validée" },
+      { month:"Oct 26",  title:"GO live visé",           note:"19/10 · les deux modules branchés" },
+    ],
+    en: [
+      { month:"Aug 26", title:"Build starts",            note:"Hexagon laid against stubs" },
+      { month:"Sep 26", title:"Admissibility in place",  note:"16 rules + completeness matrix" },
+      { month:"Sep 26", title:"Interpretation wired",    note:"Real Bedrock call, output validated" },
+      { month:"Oct 26", title:"Target go-live",          note:"19/10 · both modules wired" },
+    ],
+  },
+};
+
+function CaseSwitcher({ current, onSelect }) {
+  const { t } = useI18n();
+  return (
+    <div style={{
+      display:"inline-flex",background:"var(--soft)",borderRadius:999,padding:4,
+      marginBottom:36,flexWrap:"wrap",gap:2
+    }}>
+      {CASE_IDS.map(id=>{
+        const tab = t(`cases.${id}.tab`);
+        const active = id === current;
+        return (
+          <button key={id} onClick={()=>onSelect(id)}
+            style={{
+              appearance:"none",border:"none",cursor:"pointer",
+              background: active ? "var(--card)" : "transparent",
+              boxShadow: active ? "0 1px 2px rgba(0,0,0,0.06)" : "none",
+              color: active ? "var(--ink)" : "var(--muted)",
+              padding:"10px 18px",borderRadius:999,
+              fontFamily:"Inter Tight",fontSize:14,fontWeight:500,
+              display:"flex",alignItems:"baseline",gap:8,
+              transition:"all 160ms ease"
+            }}
+            onMouseEnter={(e)=>{if(!active)e.currentTarget.style.color="var(--ink)"}}
+            onMouseLeave={(e)=>{if(!active)e.currentTarget.style.color="var(--muted)"}}
+          >
+            <span style={{fontWeight:600,letterSpacing:"-0.01em"}}>{tab.client}</span>
+            <span className="meta" style={{color:active?"var(--muted)":"inherit"}}>{tab.topic}</span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function CasePage({ caseId, setCaseId }) {
   const { t, lang } = useI18n();
-  const meta = t("case.meta");
-  const role = t("case.role");
-  const steps = t("case.steps");
-  const results = t("case.results");
-  const costs = t("case.costs");
-  const latency = t("case.latency");
-  const capacities = t("case.capacities");
+  const id = CASE_IDS.includes(caseId) ? caseId : CASE_IDS[0];
+  const c = t(`cases.${id}`);
+  const other = CASE_IDS[(CASE_IDS.indexOf(id) + 1) % CASE_IDS.length];
 
-  const timelineItems = lang === "en" ? [
-    { month:"Feb 25", title:"Bronze formalised",        note:"Lakehouse · raw ingestion" },
-    { month:"Mar 25", title:"CDC Type 2 / Silver",      note:"Historisation in production" },
-    { month:"May 25", title:"Terraform IaC",            note:"Infrastructure as code" },
-    { month:"Sep 25", title:"Gold + BI",                note:"Exploitation & Marketing on Power BI" },
-    { month:"Nov 25", title:"MDM Device",               note:"2nd MDM domain (Vitale terminals)" },
-    { month:"Apr 26", title:"End-to-end subscription",  note:"Full Sage cycle automated" },
-  ] : [
-    { month:"Fév 25", title:"Bronze formalisé",         note:"Lakehouse · ingestion brute" },
-    { month:"Mar 25", title:"CDC Type 2 / Silver",      note:"Historisation en production" },
-    { month:"Mai 25", title:"Terraform IaC",            note:"Infrastructure as code" },
-    { month:"Sep 25", title:"Gold + BI",                note:"Exploitation & Marketing en Power BI" },
-    { month:"Nov 25", title:"MDM Device",               note:"2ᵉ domaine MDM (terminaux Vitale)" },
-    { month:"Avr 26", title:"Souscription end-to-end",  note:"Cycle complet Sage automatisé" },
-  ];
+  const meta = c.meta;
+  const role = c.role;
+  const steps = c.steps;
+  const results = c.results;
+  const costs = c.costs;
+  const latency = c.latency;
+  const capacities = c.capacities;
+
+  const timelineItems = TIMELINES[id][lang] || TIMELINES[id].fr;
+
+  // Switching study mid-page would otherwise leave the reader deep in the old one.
+  useEffect(()=>{ window.scrollTo({ top:0, behavior:"instant" }); },[id]);
 
   return (
     <main>
       <Section style={{paddingTop:64}}>
+        <CaseSwitcher current={id} onSelect={setCaseId} />
         <div style={{display:"grid",gridTemplateColumns:"repeat(12,1fr)",gap:24,alignItems:"start"}}>
           <div style={{gridColumn:"span 8"}}>
-            <div className="eyebrow">{t("case.eyebrow")}</div>
+            <div className="eyebrow">{c.eyebrow}</div>
             <h1 style={{fontFamily:"Inter Tight",fontWeight:600,fontSize:88,lineHeight:0.95,letterSpacing:"-0.04em",margin:"24px 0 0"}}>
-              {t("case.titleA")}<span style={{color:"var(--accent)"}}>{t("case.titleAccent")}</span>{t("case.titleColon")}<br/>
-              {t("case.titleB")}<br/>
-              {t("case.titleC")}<em style={{fontWeight:400}}>{t("case.titleEm")}</em>{t("case.titleD")}
+              {c.titleA}<span style={{color:"var(--accent)"}}>{c.titleAccent}</span>{c.titleColon}<br/>
+              {c.titleB}<br/>
+              {c.titleC}<em style={{fontWeight:400}}>{c.titleEm}</em>{c.titleD}
             </h1>
-            <p className="lead" style={{marginTop:28,maxWidth:680,fontSize:22,lineHeight:1.45}}>{t("case.lead")}</p>
+            <p className="lead" style={{marginTop:28,maxWidth:680,fontSize:22,lineHeight:1.45}}>{c.lead}</p>
           </div>
           <div style={{gridColumn:"span 4"}}>
             <div style={{border:"1px solid var(--hair)",borderRadius:6,display:"grid",gridTemplateColumns:"1fr 1fr"}}>
@@ -67,19 +133,19 @@ export function CasePage() {
       <Section style={{marginTop:96}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(12,1fr)",gap:24}}>
           <div style={{gridColumn:"span 3"}}>
-            <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{t("case.ctxEyebrow")}</div>
+            <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{c.ctxEyebrow}</div>
             <h2 style={{fontFamily:"Inter Tight",fontWeight:600,fontSize:36,letterSpacing:"-0.03em",margin:0,lineHeight:1.05}}>
-              {t("case.ctxTitleA")}<em style={{fontWeight:400}}>{t("case.ctxTitleEm")}</em>{t("case.ctxTitleB")}
+              {c.ctxTitleA}<em style={{fontWeight:400}}>{c.ctxTitleEm}</em>{c.ctxTitleB}
             </h2>
           </div>
           <div style={{gridColumn:"5 / span 8"}}>
             <div style={{columnCount:2,columnGap:32,fontSize:16,lineHeight:1.7,color:"var(--ink)"}}>
               <p style={{margin:"0 0 18px"}}>
-                <span style={{float:"left",fontFamily:"Inter Tight",fontWeight:600,fontSize:72,lineHeight:0.85,color:"var(--accent)",marginRight:12,marginTop:8}}>{t("case.ctxDrop")}</span>
-                {t("case.ctxP1")}
+                <span style={{float:"left",fontFamily:"Inter Tight",fontWeight:600,fontSize:72,lineHeight:0.85,color:"var(--accent)",marginRight:12,marginTop:8}}>{c.ctxDrop}</span>
+                {c.ctxP1}
               </p>
-              <p style={{margin:"0 0 18px",color:"var(--muted)"}}>{t("case.ctxP2")}</p>
-              <p style={{margin:"0",color:"var(--muted)"}}>{t("case.ctxP3")}</p>
+              <p style={{margin:"0 0 18px",color:"var(--muted)"}}>{c.ctxP2}</p>
+              <p style={{margin:"0",color:"var(--muted)"}}>{c.ctxP3}</p>
             </div>
           </div>
         </div>
@@ -88,22 +154,24 @@ export function CasePage() {
       <Section style={{marginTop:96}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(12,1fr)",gap:24,alignItems:"start"}}>
           <div style={{gridColumn:"span 3"}}>
-            <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{t("case.archEyebrow")}</div>
+            <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{c.archEyebrow}</div>
             <h2 style={{fontFamily:"Inter Tight",fontWeight:600,fontSize:36,letterSpacing:"-0.03em",margin:0,lineHeight:1.05}}>
-              {t("case.archTitle")}
+              {c.archTitle}
             </h2>
-            <p className="body" style={{marginTop:18,fontSize:15}}>{t("case.archLead")}</p>
+            <p className="body" style={{marginTop:18,fontSize:15}}>{c.archLead}</p>
           </div>
           <div style={{gridColumn:"5 / span 8"}}>
-            <ArchitectureDiagram beforeLabel={t("case.archBefore")} afterLabel={t("case.archAfter")} />
+            {id === "olaqin"
+              ? <ArchitectureDiagram beforeLabel={c.archBefore} afterLabel={c.archAfter} />
+              : <BoundaryDiagram lang={lang} />}
           </div>
         </div>
       </Section>
 
       <Section style={{marginTop:96}}>
-        <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{t("case.timelineEyebrow")}</div>
+        <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{c.timelineEyebrow}</div>
         <h2 style={{fontFamily:"Inter Tight",fontWeight:600,fontSize:36,letterSpacing:"-0.03em",margin:"0 0 24px",lineHeight:1.05}}>
-          {t("case.timelineTitle")}
+          {c.timelineTitle}
         </h2>
         <MigrationTimeline items={timelineItems} />
       </Section>
@@ -111,11 +179,11 @@ export function CasePage() {
       <Section style={{marginTop:96}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(12,1fr)",gap:24}}>
           <div style={{gridColumn:"span 3"}}>
-            <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{t("case.apprEyebrow")}</div>
+            <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{c.apprEyebrow}</div>
             <h2 style={{fontFamily:"Inter Tight",fontWeight:600,fontSize:36,letterSpacing:"-0.03em",margin:0,lineHeight:1.05}}>
-              {t("case.apprTitleA")}<br/>{t("case.apprTitleB")}
+              {c.apprTitleA}<br/>{c.apprTitleB}
             </h2>
-            <p className="body" style={{marginTop:20,fontSize:15}}>{t("case.apprLead")}</p>
+            <p className="body" style={{marginTop:20,fontSize:15}}>{c.apprLead}</p>
           </div>
           <div style={{gridColumn:"5 / span 8"}}>
             <div style={{borderTop:"1px solid var(--hair)"}}>
@@ -136,14 +204,14 @@ export function CasePage() {
       <Section style={{marginTop:96}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(12,1fr)",gap:24,alignItems:"start"}}>
           <div style={{gridColumn:"span 3"}}>
-            <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{t("case.lineageEyebrow")}</div>
+            <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{c.lineageEyebrow}</div>
             <h2 style={{fontFamily:"Inter Tight",fontWeight:600,fontSize:36,letterSpacing:"-0.03em",margin:0,lineHeight:1.05}}>
-              {t("case.lineageTitle")}
+              {c.lineageTitle}
             </h2>
-            <p className="body" style={{marginTop:18,fontSize:15}}>{t("case.lineageLead")}</p>
+            <p className="body" style={{marginTop:18,fontSize:15}}>{c.lineageLead}</p>
           </div>
           <div style={{gridColumn:"5 / span 8"}}>
-            <LineageGraph />
+            {id === "olaqin" ? <LineageGraph /> : <ModulePipeline steps={c.pipeline} />}
           </div>
         </div>
       </Section>
@@ -152,13 +220,13 @@ export function CasePage() {
         <div style={{maxWidth:1440,margin:"0 auto",padding:"0 36px"}}>
           <div style={{display:"grid",gridTemplateColumns:"repeat(12,1fr)",gap:24,marginBottom:48}}>
             <div style={{gridColumn:"span 3"}}>
-              <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{t("case.resultsEyebrow")}</div>
+              <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{c.resultsEyebrow}</div>
               <h2 style={{fontFamily:"Inter Tight",fontWeight:600,fontSize:36,letterSpacing:"-0.03em",margin:0,lineHeight:1.05}}>
-                {t("case.resultsTitleA")}<em style={{fontWeight:400}}>{t("case.resultsTitleEm")}</em>{t("case.resultsTitleB")}
+                {c.resultsTitleA}<em style={{fontWeight:400}}>{c.resultsTitleEm}</em>{c.resultsTitleB}
               </h2>
             </div>
             <div style={{gridColumn:"5 / span 8"}}>
-              <p className="lead" style={{margin:0,maxWidth:560}}>{t("case.resultsLead")}</p>
+              <p className="lead" style={{margin:0,maxWidth:560}}>{c.resultsLead}</p>
             </div>
           </div>
 
@@ -177,39 +245,54 @@ export function CasePage() {
 
           <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:24,marginTop:48,background:"var(--card)",border:"1px solid var(--hair)",borderRadius:6}}>
             <div style={{padding:36,borderRight:"1px solid var(--hair)"}}>
-              <div className="eyebrow" style={{marginBottom:18}}>{t("case.costsTitle")}</div>
+              <div className="eyebrow" style={{marginBottom:18}}>{c.costsTitle}</div>
               <DonutChart label="Total" total={100}
                 segments={costs.map((s,i)=>({...s, color:["#169cdf","#15161a","#65686d","#cfd2d7"][i]||"#169cdf"}))}/>
             </div>
             <div style={{padding:36}}>
-              <div className="eyebrow" style={{marginBottom:18}}>{t("case.latencyTitle")}</div>
-              <BarChart height={220} items={latency} accentIndex={4}/>
+              <div className="eyebrow" style={{marginBottom:18}}>{c.latencyTitle}</div>
+              <BarChart height={220} items={latency} accentIndex={id === "olaqin" ? 6 : 0}/>
               <div style={{marginTop:24,paddingTop:20,borderTop:"1px solid var(--hair)",display:"flex",flexDirection:"column",gap:14}}>
-                {capacities.map((c,i)=><HBar key={i} value={c.v} label={c.l}/>)}
+                {capacities.map((cap,i)=><HBar key={i} value={cap.v} label={cap.l}/>)}
               </div>
             </div>
           </div>
+
+          {c.resultsNote && (
+            <p className="body" style={{
+              margin:"32px 0 0",maxWidth:760,fontSize:15,lineHeight:1.7,color:"var(--muted)"
+            }}>{c.resultsNote}</p>
+          )}
         </div>
       </section>
 
       <Section style={{marginTop:96}}>
         <div style={{display:"grid",gridTemplateColumns:"repeat(12,1fr)",gap:24}}>
           <div style={{gridColumn:"span 3"}}>
-            <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{t("case.stackEyebrow")}</div>
+            <div className="mono meta" style={{marginBottom:14,color:"var(--accent)"}}>{c.stackEyebrow}</div>
             <h2 style={{fontFamily:"Inter Tight",fontWeight:600,fontSize:36,letterSpacing:"-0.03em",margin:0,lineHeight:1.05}}>
-              {t("case.stackTitle")}
+              {c.stackTitle}
             </h2>
-            <p className="body" style={{marginTop:20,fontSize:15}}>{t("case.stackLead")}</p>
+            <p className="body" style={{marginTop:20,fontSize:15}}>{c.stackLead}</p>
           </div>
           <div style={{gridColumn:"5 / span 8"}}>
             <div style={{display:"flex",flexWrap:"wrap",gap:10}}>
-              {["Microsoft Fabric","Lakehouse","Delta Lake","PySpark","Spark SQL","Notebooks Fabric","Fabric Data Pipelines","Power BI · DirectLake","TMDL","Azure","Azure Key Vault","Azure DevOps","Logic Apps","Terraform","GraphQL","mTLS","OAuth2 / APIM"].map((tag,i)=>(
+              {c.stackTags.map((tag,i)=>(
                 <Chip key={i}>{tag}</Chip>
               ))}
             </div>
-            <div style={{marginTop:36,paddingTop:24,borderTop:"1px solid var(--hair)",display:"flex",justifyContent:"space-between"}}>
-              <span className="meta">{t("case.nextLabel")}</span>
-              <a href="#" style={{fontSize:14,fontWeight:500,color:"var(--accent)"}}>{t("case.nextValue")}</a>
+            <div style={{marginTop:36,paddingTop:24,borderTop:"1px solid var(--hair)",display:"flex",justifyContent:"space-between",alignItems:"baseline",gap:16}}>
+              <span className="meta">{c.nextLabel}</span>
+              <button onClick={()=>setCaseId(other)}
+                style={{
+                  appearance:"none",border:"none",background:"transparent",cursor:"pointer",
+                  padding:0,fontFamily:"Inter Tight",fontSize:14,fontWeight:500,
+                  color:"var(--accent)",textAlign:"right",
+                  borderBottom:"1px solid transparent",transition:"border-color 200ms"
+                }}
+                onMouseEnter={(e)=>e.currentTarget.style.borderBottomColor="var(--accent)"}
+                onMouseLeave={(e)=>e.currentTarget.style.borderBottomColor="transparent"}
+              >{c.nextValue}</button>
             </div>
           </div>
         </div>

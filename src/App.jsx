@@ -16,6 +16,8 @@ const PAGES = {
 
 export default function App() {
   const [page, setPage] = useState("home");
+  // Which case study the Case page shows; see CASE_IDS in page-case-contact.jsx.
+  const [caseId, setCaseId] = useState("olaqin");
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -30,8 +32,8 @@ export default function App() {
         <div data-screen-label={`0${idx} ${page}`}>
           <PageScrollBar />
           <Header page={page} setPage={setPage} />
-          <div key={page} style={{ animation: "fadeIn 320ms ease both" }}>
-            <Page setPage={setPage} />
+          <div key={page === "case" ? `case-${caseId}` : page} style={{ animation: "fadeIn 320ms ease both" }}>
+            <Page setPage={setPage} caseId={caseId} setCaseId={setCaseId} />
           </div>
           <Footer />
         </div>

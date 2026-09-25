@@ -24,7 +24,9 @@ function StatBand({ items }) {
   );
 }
 
-export default function HomePage({ setPage }) {
+export default function HomePage({ setPage, setCaseId }) {
+  // The hero and featured block both point at the Olaqin study.
+  const openCase = (id) => { setCaseId?.(id); setPage("case"); };
   const { t } = useI18n();
   const stats = t("home.stats");
   const projects = t("home.projects");
@@ -55,7 +57,7 @@ export default function HomePage({ setPage }) {
             </h1>
             <p className="lead" style={{maxWidth:540,marginTop:36}}>{t("home.lead")}</p>
             <div style={{display:"flex",gap:12,marginTop:36,alignItems:"center",flexWrap:"wrap"}}>
-              <PrimaryButton onClick={()=>setPage("case")}>{t("common.viewCase")}</PrimaryButton>
+              <PrimaryButton onClick={()=>openCase("olaqin")}>{t("common.viewCase")}</PrimaryButton>
               <a href="mailto:florianposezdarsonval@gmail.com" style={{
                 fontSize:14,fontWeight:500,color:"var(--accent)",
                 borderBottom:"1px solid var(--accent)",paddingBottom:2
@@ -99,7 +101,7 @@ export default function HomePage({ setPage }) {
             </h2>
             <p className="lead" style={{marginTop:24,maxWidth:460}}>{t("home.featuredLead")}</p>
             <div style={{marginTop:32}}>
-              <PrimaryButton onClick={()=>setPage("case")}>{t("common.readCase")}</PrimaryButton>
+              <PrimaryButton onClick={()=>openCase("olaqin")}>{t("common.readCase")}</PrimaryButton>
             </div>
             <div className="meta" style={{marginTop:36,display:"flex",gap:24}}>
               {featuredMeta.map((m,i)=>(

@@ -117,7 +117,15 @@ export function ExperiencePage() {
                 </div>
                 <div style={{gridColumn:"span 4"}}>
                   <h3 style={{fontFamily:"Inter Tight",fontWeight:600,fontSize:32,lineHeight:1.05,letterSpacing:"-0.03em",margin:0}}>{e.company}</h3>
-                  <div className="body" style={{marginTop:8,fontSize:16}}>{e.role}</div>
+                  <div style={{marginTop:10,display:"flex",alignItems:"baseline",gap:10,flexWrap:"wrap"}}>
+                    {e.client && (
+                      <span className="mono" style={{
+                        fontSize:12,fontWeight:500,letterSpacing:".12em",textTransform:"uppercase",
+                        color:"var(--accent)"
+                      }}>{e.client}</span>
+                    )}
+                    <span className="body" style={{fontSize:16}}>{e.role}</span>
+                  </div>
                 </div>
                 <div style={{gridColumn:"span 6"}}>
                   <p style={{margin:0,fontSize:16,lineHeight:1.6,color:"var(--ink)"}}>{e.summary}</p>
