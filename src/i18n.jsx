@@ -170,7 +170,7 @@ export const I18N = {
         titleC:"à un ", titleEm:"référentiel", titleD:" unique.",
         lead:"Vingt mois pour bâtir la première plateforme data d'Olaqin (santé). Greenfield sur Microsoft Fabric, architecture médaillon en trois lakehouses, conformité HDS / RGPD. Douze sources branchées ; cinq référentiels MDM en production ; synchronisation bidirectionnelle vers les SI métier et APIs temps réel.",
         meta:[ {l:"Client",v:"Olaqin · Santé (HDS / RGPD)"},{l:"Année",v:"2025 - 2026"},{l:"Durée",v:"20 mois"},{l:"Équipe",v:"≈ 6 ingénieurs"} ],
-        role:{l:"Rôle",v:"Consultant Data Engineer"},
+        role:{l:"Rôle",v:"Lead Data Engineer"},
 
         ctxEyebrow:"I · CONTEXTE",
         ctxTitleA:"Dix SI ", ctxTitleEm:"silotés", ctxTitleB:", plus les référentiels publics.",
@@ -512,7 +512,7 @@ export const I18N = {
         titleC:"to a ", titleEm:"single", titleD:" reference.",
         lead:"Twenty months to build the first data platform at Olaqin (healthcare). Greenfield on Microsoft Fabric, medallion architecture across three lakehouses, HDS / GDPR compliance. Twelve sources connected; five MDM master referentials in production; bidirectional sync back to business systems and real-time APIs.",
         meta:[ {l:"Client",v:"Olaqin · Healthcare (HDS / GDPR)"},{l:"Year",v:"2025 - 2026"},{l:"Duration",v:"20 months"},{l:"Team",v:"≈ 6 engineers"} ],
-        role:{l:"Role",v:"Consultant Data Engineer"},
+        role:{l:"Role",v:"Lead Data Engineer"},
 
         ctxEyebrow:"I · CONTEXT",
         ctxTitleA:"Ten ", ctxTitleEm:"siloed", ctxTitleB:" systems, plus the public registries.",
